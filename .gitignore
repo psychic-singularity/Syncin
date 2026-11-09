@@ -1,0 +1,22 @@
+# Field Guide Tracking & Context Documents
+architecture.md
+constraints.md
+decisions.md
+feature.md
+flow.md
+handover.md
+rollback.md
+test-checklist.md
+project-context.md
+
+# Dependencies & Build artifacts
+node_modules/
+.next/
+dist/
+*.tsbuildinfo
+
+# Sensitive environment files
+.env
+.env.local
+.env.*.local
+
