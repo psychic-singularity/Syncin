@@ -1,0 +1,26 @@
+{
+  "name": "ws-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Standalone Node.js + TypeScript WebSocket Server for Yjs CRDT Synchronization",
+  "main": "dist/server.js",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc",
+    "test": "tsx tests/sync.test.ts",
+    "start": "node dist/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "lib0": "^0.2.98",
+    "ws": "^8.18.0",
+    "y-protocols": "^1.0.6",
+    "yjs": "^13.6.21"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "@types/ws": "^8.5.13",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
