@@ -9,6 +9,7 @@ import {
   handleProtocolMessage,
   sendBinary,
 } from "./sync.js";
+import { saveUpdate, loadDocumentState } from "./db.js";
 
 /**
  * Represents a collaborative document room session holding the authoritative
@@ -38,6 +39,13 @@ export class Room {
           sendBinary(client, message);
         }
       });
+
+      // Persist to Neon Postgres asynchronously if not originating from DB rehydration
+      if (origin !== "db") {
+        saveUpdate(this.name, update).catch((err) => {
+          console.error(`[DB] Error saving update for room "${this.name}":`, err);
+        });
+      }
     });
 
     // 2. Listen for awareness updates (cursors, presence) and broadcast
@@ -92,9 +100,9 @@ export class Room {
 
     // Attach message receiver
     socket.on("message", (data: any, isBinary: boolean) => {
-      if (!isBinary) return;
+      if (!isBinary && typeof data === "string") return;
       const buffer = new Uint8Array(data);
-      handleProtocolMessage(socket, this.doc, this.awareness, buffer);
+      this.processMessage(socket, buffer);
     });
 
     // Attach disconnection cleanup
@@ -104,6 +112,13 @@ export class Room {
 
     socket.on("close", cleanup);
     socket.on("error", cleanup);
+  }
+
+  /**
+   * Processes an incoming protocol message for a client socket.
+   */
+  public processMessage(socket: WebSocket, message: Uint8Array): void {
+    handleProtocolMessage(socket, this.doc, this.awareness, message);
   }
 
   /**
@@ -136,19 +151,36 @@ export class Room {
 }
 
 /**
- * Manages active rooms in memory.
+ * Manages active rooms in memory and coordinates persistent rehydration.
  */
 export class RoomManager {
   private readonly rooms: Map<string, Room> = new Map();
+  private readonly loadingRooms: Map<string, Promise<Room>> = new Map();
 
-  public getOrCreateRoom(roomName: string): Room {
-    let room = this.rooms.get(roomName);
-    if (!room) {
-      room = new Room(roomName);
-      this.rooms.set(roomName, room);
-      console.log(`[RoomManager] Created new room: "${roomName}"`);
+  public async getOrCreateRoom(roomName: string): Promise<Room> {
+    const existing = this.rooms.get(roomName);
+    if (existing) {
+      return existing;
     }
-    return room;
+
+    let loading = this.loadingRooms.get(roomName);
+    if (!loading) {
+      loading = (async () => {
+        const room = new Room(roomName);
+        try {
+          await loadDocumentState(roomName, room.doc);
+        } catch (err) {
+          console.error(`[RoomManager] Failed to rehydrate room "${roomName}":`, err);
+        }
+        this.rooms.set(roomName, room);
+        this.loadingRooms.delete(roomName);
+        console.log(`[RoomManager] Initialized and cached room: "${roomName}"`);
+        return room;
+      })();
+      this.loadingRooms.set(roomName, loading);
+    }
+
+    return loading;
   }
 
   public getRoom(roomName: string): Room | undefined {

@@ -1,9 +1,18 @@
 import dotenv from "dotenv";
 import path from "node:path";
+import fs from "node:fs";
 
-// Load environment variables from root .env if present
-dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
-dotenv.config();
+// Find root .env file regardless of whether command is run from root or ws-server/
+const rootEnvPath = path.resolve(process.cwd(), "../.env");
+const localEnvPath = path.resolve(process.cwd(), ".env");
+
+if (fs.existsSync(rootEnvPath)) {
+  dotenv.config({ path: rootEnvPath });
+} else if (fs.existsSync(localEnvPath)) {
+  dotenv.config({ path: localEnvPath });
+} else {
+  dotenv.config();
+}
 
 export interface ServerConfig {
   port: number;

@@ -46,15 +46,34 @@ server.on("upgrade", (req, socket, head) => {
 });
 
 wss.on("connection", (socket: WebSocket, _req: http.IncomingMessage, roomName: string) => {
-  const room = roomManager.getOrCreateRoom(roomName);
-  console.log(`[WebSocket] Client connected to room: "${roomName}"`);
-  room.handleConnection(socket);
+  const earlyMessages: Uint8Array[] = [];
+  const onEarlyMessage = (data: any) => {
+    earlyMessages.push(new Uint8Array(data));
+  };
+  socket.on("message", onEarlyMessage);
 
-  socket.on("close", (code, reason) => {
-    console.log(
-      `[WebSocket] Client disconnected from room: "${roomName}" (code: ${code}, reason: ${reason.toString() || "none"})`
-    );
-  });
+  roomManager
+    .getOrCreateRoom(roomName)
+    .then((room) => {
+      socket.off("message", onEarlyMessage);
+      console.log(`[WebSocket] Client connected to room: "${roomName}"`);
+      room.handleConnection(socket);
+
+      // Drain any messages received during DB rehydration
+      for (const msg of earlyMessages) {
+        room.processMessage(socket, msg);
+      }
+
+      socket.on("close", (code, reason) => {
+        console.log(
+          `[WebSocket] Client disconnected from room: "${roomName}" (code: ${code}, reason: ${reason.toString() || "none"})`
+        );
+      });
+    })
+    .catch((err) => {
+      console.error(`[WebSocket] Failed to initialize connection for room "${roomName}":`, err);
+      socket.close(1011, "Internal server error initializing room");
+    });
 });
 
 // Start listening

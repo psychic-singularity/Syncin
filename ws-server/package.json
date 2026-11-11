@@ -7,10 +7,14 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "test": "tsx tests/sync.test.ts",
+    "test:sync": "tsx tests/sync.test.ts",
+    "test:db": "tsx tests/db.test.ts",
+    "test:persistence": "tsx tests/persistence.test.ts",
+    "test": "tsx tests/db.test.ts && tsx tests/persistence.test.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {
+    "@prisma/client": "^6.19.3",
     "dotenv": "^16.4.7",
     "lib0": "^0.2.98",
     "ws": "^8.18.0",
@@ -20,6 +24,7 @@
   "devDependencies": {
     "@types/node": "^20.17.10",
     "@types/ws": "^8.5.13",
+    "prisma": "^6.19.3",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
