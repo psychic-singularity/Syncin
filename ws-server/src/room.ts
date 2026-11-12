@@ -10,6 +10,7 @@ import {
   sendBinary,
 } from "./sync.js";
 import { saveUpdate, loadDocumentState } from "./db.js";
+import { RedisService, redisService, RoomMessageCallback } from "./redis.js";
 
 /**
  * Represents a collaborative document room session holding the authoritative
@@ -21,9 +22,12 @@ export class Room {
   public readonly awareness: awarenessProtocol.Awareness;
   // Tracks connected sockets and their associated awareness client IDs
   public readonly clients: Map<WebSocket, Set<number>> = new Map();
+  private readonly redis: RedisService;
+  private readonly redisCallback: RoomMessageCallback;
 
-  constructor(name: string) {
+  constructor(name: string, redis: RedisService = redisService) {
     this.name = name;
+    this.redis = redis;
     this.doc = new Y.Doc();
     this.awareness = new awarenessProtocol.Awareness(this.doc);
 
@@ -34,16 +38,25 @@ export class Room {
       syncProtocol.writeUpdate(encoder, update);
       const message = encoding.toUint8Array(encoder);
 
+      // Broadcast to local clients in this room (excluding origin socket)
       this.clients.forEach((_, client) => {
         if (client !== origin) {
           sendBinary(client, message);
         }
       });
 
-      // Persist to Neon Postgres asynchronously if not originating from DB rehydration
-      if (origin !== "db") {
+      // Persist to Neon Postgres asynchronously if not originating from DB rehydration or Redis
+      // (Only the server that directly received the edit from a client writes to the database)
+      if (origin !== "db" && origin !== "redis") {
         saveUpdate(this.name, update).catch((err) => {
           console.error(`[DB] Error saving update for room "${this.name}":`, err);
+        });
+      }
+
+      // Publish delta to Redis for other server instances if not received from Redis
+      if (origin !== "redis") {
+        this.redis.publish(this.name, "update", update).catch((err) => {
+          console.error(`[Redis] Error publishing update for room "${this.name}":`, err);
         });
       }
     });
@@ -53,12 +66,13 @@ export class Room {
       "update",
       ({ added, updated, removed }: { added: number[]; updated: number[]; removed: number[] }, origin: any) => {
         const changedClients = added.concat(updated).concat(removed);
+        const awarenessUpdate = awarenessProtocol.encodeAwarenessUpdate(
+          this.awareness,
+          changedClients
+        );
         const encoder = encoding.createEncoder();
         encoding.writeVarUint(encoder, MESSAGE_AWARENESS);
-        encoding.writeVarUint8Array(
-          encoder,
-          awarenessProtocol.encodeAwarenessUpdate(this.awareness, changedClients)
-        );
+        encoding.writeVarUint8Array(encoder, awarenessUpdate);
         const message = encoding.toUint8Array(encoder);
 
         this.clients.forEach((_, client) => {
@@ -66,8 +80,31 @@ export class Room {
             sendBinary(client, message);
           }
         });
+
+        // Publish awareness to other server instances if not received from Redis
+        if (origin !== "redis") {
+          this.redis.publish(this.name, "awareness", awarenessUpdate).catch((err) => {
+            console.error(`[Redis] Error publishing awareness for room "${this.name}":`, err);
+          });
+        }
       }
     );
+
+    // 3. Subscribe to Redis messages from other server nodes for this room
+    this.redisCallback = (type: "update" | "awareness", payload: Uint8Array) => {
+      if (type === "update") {
+        // Apply remote update with origin 'redis'
+        // This triggers this.doc.on('update') which broadcasts to local sockets
+        // without re-publishing to Redis or double-writing to the database.
+        Y.applyUpdate(this.doc, payload, "redis");
+      } else if (type === "awareness") {
+        awarenessProtocol.applyAwarenessUpdate(this.awareness, payload, "redis");
+      }
+    };
+
+    this.redis.subscribeRoom(this.name, this.redisCallback).catch((err) => {
+      console.error(`[Redis] Failed to subscribe room "${this.name}":`, err);
+    });
   }
 
   /**
@@ -137,6 +174,7 @@ export class Room {
   }
 
   public destroy(): void {
+    this.redis.unsubscribeRoom(this.name, this.redisCallback).catch(() => {});
     this.clients.forEach((_, socket) => {
       try {
         socket.close();
@@ -156,6 +194,11 @@ export class Room {
 export class RoomManager {
   private readonly rooms: Map<string, Room> = new Map();
   private readonly loadingRooms: Map<string, Promise<Room>> = new Map();
+  private readonly redis: RedisService;
+
+  constructor(redis: RedisService = redisService) {
+    this.redis = redis;
+  }
 
   public async getOrCreateRoom(roomName: string): Promise<Room> {
     const existing = this.rooms.get(roomName);
@@ -166,7 +209,7 @@ export class RoomManager {
     let loading = this.loadingRooms.get(roomName);
     if (!loading) {
       loading = (async () => {
-        const room = new Room(roomName);
+        const room = new Room(roomName, this.redis);
         try {
           await loadDocumentState(roomName, room.doc);
         } catch (err) {

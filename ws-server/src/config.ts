@@ -18,11 +18,13 @@ export interface ServerConfig {
   port: number;
   host: string;
   instanceId: string;
+  redisUrl: string;
 }
 
 export const config: ServerConfig = {
   port: parseInt(process.env.WS_PORT || process.env.PORT || "4000", 10),
   host: process.env.WS_HOST || "0.0.0.0",
   instanceId: process.env.INSTANCE_ID || `ws-${Math.random().toString(36).substring(2, 9)}`,
+  redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
 };
 

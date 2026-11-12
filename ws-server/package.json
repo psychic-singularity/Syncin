@@ -10,12 +10,14 @@
     "test:sync": "tsx tests/sync.test.ts",
     "test:db": "tsx tests/db.test.ts",
     "test:persistence": "tsx tests/persistence.test.ts",
-    "test": "tsx tests/db.test.ts && tsx tests/persistence.test.ts",
+    "test:scale": "tsx tests/redis-scale.test.ts",
+    "test": "tsx tests/db.test.ts && tsx tests/persistence.test.ts && tsx tests/redis-scale.test.ts",
     "start": "node dist/server.js"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
     "dotenv": "^16.4.7",
+    "ioredis": "^6.0.0",
     "lib0": "^0.2.98",
     "ws": "^8.18.0",
     "y-protocols": "^1.0.6",
