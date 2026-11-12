@@ -3,6 +3,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { config } from "./config.js";
 import { roomManager } from "./room.js";
 import { redisService } from "./redis.js";
+import { compactionQueue } from "./queue.js";
 
 /**
  * HTTP Server setup:
@@ -92,6 +93,7 @@ server.listen(config.port, config.host, () => {
 const shutdown = async () => {
   console.log("[Server] Shutting down gracefully...");
   await redisService.shutdown();
+  await compactionQueue.close();
   server.close(() => {
     console.log("[Server] Closed HTTP and WebSocket listener.");
     process.exit(0);

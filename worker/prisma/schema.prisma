@@ -1,0 +1,45 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Document {
+  id        String     @id @default(uuid())
+  title     String     @default("Untitled Document")
+  language  String     @default("typescript")
+  createdAt DateTime   @default(now()) @map("created_at")
+  updatedAt DateTime   @updatedAt @map("updated_at")
+  updates   Update[]
+  snapshot  Snapshot?
+
+  @@map("documents")
+}
+
+model Update {
+  id         BigInt   @id @default(autoincrement())
+  documentId String   @map("document_id")
+  blob       Bytes    // Yjs binary update (bytea in Postgres)
+  createdAt  DateTime @default(now()) @map("created_at")
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([documentId, id])
+  @@map("updates")
+}
+
+model Snapshot {
+  documentId   String   @id @map("document_id")
+  blob         Bytes    // Compiled binary Yjs document state (bytea in Postgres)
+  lastUpdateId BigInt   @default(0) @map("last_update_id")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  document     Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@map("snapshots")
+}
+

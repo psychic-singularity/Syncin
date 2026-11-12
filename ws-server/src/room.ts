@@ -11,6 +11,7 @@ import {
 } from "./sync.js";
 import { saveUpdate, loadDocumentState } from "./db.js";
 import { RedisService, redisService, RoomMessageCallback } from "./redis.js";
+import { enqueueCompaction } from "./queue.js";
 
 /**
  * Represents a collaborative document room session holding the authoritative
@@ -24,6 +25,7 @@ export class Room {
   public readonly clients: Map<WebSocket, Set<number>> = new Map();
   private readonly redis: RedisService;
   private readonly redisCallback: RoomMessageCallback;
+  private uncompactedUpdatesCount = 0;
 
   constructor(name: string, redis: RedisService = redisService) {
     this.name = name;
@@ -51,6 +53,12 @@ export class Room {
         saveUpdate(this.name, update).catch((err) => {
           console.error(`[DB] Error saving update for room "${this.name}":`, err);
         });
+
+        this.uncompactedUpdatesCount++;
+        if (this.uncompactedUpdatesCount >= 50) {
+          this.uncompactedUpdatesCount = 0;
+          enqueueCompaction(this.name, "threshold");
+        }
       }
 
       // Publish delta to Redis for other server instances if not received from Redis
@@ -171,6 +179,12 @@ export class Room {
       );
     }
     this.clients.delete(socket);
+
+    // If room is now empty and has uncompacted updates, enqueue idle compaction
+    if (this.clients.size === 0 && this.uncompactedUpdatesCount > 0) {
+      this.uncompactedUpdatesCount = 0;
+      enqueueCompaction(this.name, "idle");
+    }
   }
 
   public destroy(): void {

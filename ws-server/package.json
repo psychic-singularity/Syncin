@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
+    "bullmq": "^6.7.5",
     "dotenv": "^16.4.7",
     "ioredis": "^6.0.0",
     "lib0": "^0.2.98",

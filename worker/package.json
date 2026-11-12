@@ -1,0 +1,27 @@
+{
+  "name": "compaction-worker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Background compaction worker merging Yjs updates into atomic snapshots using BullMQ",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "tsx tests/compaction.test.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bullmq": "^5.41.0",
+    "dotenv": "^16.4.7",
+    "ioredis": "^6.0.0",
+    "yjs": "^13.6.21"
+  },
+  "devDependencies": {
+    "@types/node": "^20.17.10",
+    "prisma": "^6.19.3",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2"
+  }
+}
