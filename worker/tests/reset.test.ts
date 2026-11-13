@@ -86,9 +86,11 @@ async function runResetIntegrationTest() {
   console.log("==================================================");
   console.log("🎉 Automated Midnight IST Reset Test PASSED");
   console.log("==================================================");
+  process.exit(0);
 }
 
 runResetIntegrationTest().catch((err) => {
   console.error("❌ Reset Integration Test FAILED:", err);
   process.exit(1);
 });
+

@@ -642,3 +642,4 @@ console.log("Total:", calculateTotal(shoppingCart));
     </div>
   );
 }
+

@@ -84,8 +84,13 @@ export async function resetAllRoomsAndDocuments(): Promise<ResetSummary> {
   });
 
   // 3. Notify active WebSocket server nodes via Redis Pub/Sub to evict memory caches
+  let redis: Redis | null = null;
   try {
-    const redis = new Redis(config.redisUrl, { lazyConnect: true });
+    redis = new Redis(config.redisUrl, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      connectTimeout: 2000,
+    });
     await redis.connect();
     await redis.publish(
       "room:system",
@@ -97,6 +102,11 @@ export async function resetAllRoomsAndDocuments(): Promise<ResetSummary> {
     await redis.quit();
     console.log("[DailyReset] Broadcasted system:reset notice to Redis channel 'room:system'.");
   } catch (err) {
+    if (redis) {
+      try {
+        redis.disconnect();
+      } catch {}
+    }
     console.warn("[DailyReset] Warning: Could not publish eviction notice to Redis:", err);
   }
 
@@ -114,3 +124,4 @@ export async function resetAllRoomsAndDocuments(): Promise<ResetSummary> {
 
   return summary;
 }
+

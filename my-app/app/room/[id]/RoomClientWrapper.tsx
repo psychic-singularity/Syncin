@@ -26,3 +26,4 @@ export default function RoomClientWrapper({ roomName }: RoomClientWrapperProps) 
     </main>
   );
 }
+
