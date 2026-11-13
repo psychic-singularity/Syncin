@@ -256,6 +256,15 @@ export class RoomManager {
   public getActiveRoomCount(): number {
     return this.rooms.size;
   }
+
+  public clearAllRooms(): void {
+    console.log(`[RoomManager] Evicting all ${this.rooms.size} cached rooms due to daily reset.`);
+    this.rooms.forEach((room) => {
+      room.destroy();
+    });
+    this.rooms.clear();
+    this.loadingRooms.clear();
+  }
 }
 
 export const roomManager = new RoomManager();

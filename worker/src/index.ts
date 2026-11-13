@@ -1,5 +1,5 @@
 import { config } from "./config.js";
-import { createCompactionWorker, compactionQueue, enqueueCompaction } from "./queue.js";
+import { createCompactionWorker, compactionQueue, enqueueCompaction, scheduleMidnightResetJob } from "./queue.js";
 import { prisma } from "./db.js";
 
 console.log("==================================================");
@@ -11,6 +11,11 @@ console.log(`   Threshold:   ${config.compactionThreshold} updates`);
 console.log("==================================================");
 
 const worker = createCompactionWorker();
+
+// Schedule repeatable daily midnight reset job (00:00 IST)
+scheduleMidnightResetJob().catch((err) => {
+  console.error("[Worker] Failed to schedule midnight reset job:", err);
+});
 
 /**
  * Periodically scans for documents that have accumulated updates exceeding

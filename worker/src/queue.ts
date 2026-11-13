@@ -1,6 +1,7 @@
 import { Queue, Worker, Job, ConnectionOptions } from "bullmq";
 import { config } from "./config.js";
 import { compactDocument, CompactionResult } from "./compactor.js";
+import { resetAllRoomsAndDocuments, ResetSummary } from "./reset.js";
 
 export interface CompactionJobData {
   documentId: string;
@@ -67,16 +68,41 @@ export async function enqueueCompaction(
 }
 
 /**
- * Factory creating the BullMQ Worker to process compaction jobs.
+ * Schedules the recurring midnight IST cleanup job in BullMQ.
+ * Uses cron pattern '0 0 * * *' with timezone 'Asia/Kolkata'.
+ */
+export async function scheduleMidnightResetJob(): Promise<void> {
+  await compactionQueue.add(
+    "midnight-reset",
+    { documentId: "system", trigger: "interval" },
+    {
+      repeat: {
+        pattern: "0 0 * * *",
+        tz: "Asia/Kolkata",
+      },
+      jobId: "daily_midnight_reset_ist",
+      removeOnComplete: true,
+    }
+  );
+  console.log("[Worker] Scheduled recurring daily midnight reset (00:00 IST / Asia/Kolkata).");
+}
+
+/**
+ * Factory creating the BullMQ Worker to process compaction and maintenance jobs.
  */
 export function createCompactionWorker(): Worker<
   CompactionJobData,
-  CompactionResult,
+  any,
   string
 > {
-  const worker = new Worker<CompactionJobData, CompactionResult, string>(
+  const worker = new Worker<CompactionJobData, any, string>(
     config.queueName,
-    async (job: Job<CompactionJobData, CompactionResult, string>) => {
+    async (job: Job<CompactionJobData, any, string>) => {
+      if (job.name === "midnight-reset") {
+        console.log(`[Worker] Executing scheduled daily midnight reset job "${job.id}"...`);
+        return await resetAllRoomsAndDocuments();
+      }
+
       console.log(
         `[Worker] Processing compaction job "${job.id}" for document "${job.data.documentId}" (trigger: ${job.data.trigger || "manual"})`
       );
@@ -89,14 +115,18 @@ export function createCompactionWorker(): Worker<
   );
 
   worker.on("completed", (job) => {
-    console.log(
-      `[Worker] Compaction job "${job.id}" completed. Compacted: ${job.returnvalue?.compactedCount ?? 0} updates.`
-    );
+    if (job.name === "midnight-reset") {
+      console.log(`[Worker] Daily midnight reset job completed successfully.`);
+    } else {
+      console.log(
+        `[Worker] Compaction job "${job.id}" completed. Compacted: ${job.returnvalue?.compactedCount ?? 0} updates.`
+      );
+    }
   });
 
   worker.on("failed", (job, err) => {
     console.error(
-      `[Worker] Compaction job "${job?.id}" failed for document "${job?.data?.documentId}":`,
+      `[Worker] Maintenance job "${job?.id}" (${job?.name}) failed:`,
       err
     );
   });

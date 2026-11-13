@@ -32,6 +32,15 @@ const server = http.createServer((req, res) => {
  */
 const wss = new WebSocketServer({ noServer: true });
 
+// Listen for system eviction actions (e.g. daily midnight reset from BullMQ worker)
+redisService.init();
+redisService.onSystemAction((action) => {
+  if (action === "DAILY_RESET") {
+    console.log("[Server] Received DAILY_RESET broadcast from Redis. Evicting memory rooms...");
+    roomManager.clearAllRooms();
+  }
+});
+
 server.on("upgrade", (req, socket, head) => {
   const url = new URL(req.url || "/", `http://${req.headers.host || "localhost"}`);
   

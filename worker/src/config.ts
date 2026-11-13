@@ -29,3 +29,4 @@ export const config: WorkerConfig = {
   compactionThreshold: parseInt(process.env.COMPACTION_UPDATE_THRESHOLD || "50", 10),
   concurrency: parseInt(process.env.COMPACTION_CONCURRENCY || "2", 10),
 };
+

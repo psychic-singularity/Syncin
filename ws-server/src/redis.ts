@@ -26,6 +26,7 @@ export class RedisService {
   private pubClient: Redis | null = null;
   private subClient: Redis | null = null;
   private roomCallbacks: Map<string, Set<RoomMessageCallback>> = new Map();
+  private systemCallback: ((action: string) => void) | null = null;
   private subscribedChannels: Set<string> = new Set();
   private isInitialized = false;
 
@@ -68,11 +69,29 @@ export class RedisService {
       this.handleIncomingMessage(channel, message);
     });
 
+    this.subClient.subscribe("room:system").catch(() => {});
+
     this.isInitialized = true;
     console.log(`[Redis] Pub/Sub initialized for instance "${this.instanceId}"`);
   }
 
+  public onSystemAction(callback: (action: string) => void): void {
+    this.systemCallback = callback;
+  }
+
   private handleIncomingMessage(channel: string, rawMessage: string): void {
+    if (channel === "room:system") {
+      try {
+        const parsed = JSON.parse(rawMessage);
+        if (parsed.action && this.systemCallback) {
+          this.systemCallback(parsed.action);
+        }
+      } catch (err) {
+        console.error(`[Redis (${this.instanceId})] Error parsing system message:`, err);
+      }
+      return;
+    }
+
     if (!channel.startsWith(ROOM_CHANNEL_PREFIX)) return;
     const roomName = channel.slice(ROOM_CHANNEL_PREFIX.length);
     const callbacks = this.roomCallbacks.get(roomName);

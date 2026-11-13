@@ -54,3 +54,4 @@ export async function enqueueCompaction(
     console.error(`[CompactionQueue] Failed to enqueue job for "${documentId}":`, err.message);
   }
 }
+

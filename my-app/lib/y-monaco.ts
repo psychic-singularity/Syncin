@@ -65,6 +65,69 @@ function createMonacoSelectionFromRelativeSelection(
 }
 
 /**
+ * Injects or updates dynamic CSS styles for remote cursors and selection ranges
+ * based on collaborator awareness metadata (name, color, typing state).
+ */
+function updateCursorStyles(awareness: Awareness) {
+  if (typeof document === "undefined") return;
+  let styleEl = document.getElementById("yjs-cursor-styles") as HTMLStyleElement | null;
+  if (!styleEl) {
+    styleEl = document.createElement("style");
+    styleEl.id = "yjs-cursor-styles";
+    document.head.appendChild(styleEl);
+  }
+
+  let css = `
+.yRemoteSelection {
+  opacity: 0.8;
+}
+.yRemoteSelectionHead {
+  position: absolute;
+  box-sizing: border-box;
+  height: 100%;
+}
+`;
+
+  awareness.getStates().forEach((state, clientID) => {
+    const user = state.user || {};
+    const color = user.color || "#3b82f6";
+    const name = user.name || `Peer #${clientID}`;
+    const isTyping = Boolean(user.isTyping);
+    const labelText = isTyping ? `${name} is typing... ✎` : name;
+    const escapedLabel = labelText.replace(/'/g, "\\'");
+
+    css += `
+.yRemoteSelection-${clientID} {
+  background-color: ${color}33 !important;
+}
+.yRemoteSelectionHead-${clientID} {
+  border-left: 2px solid ${color} !important;
+}
+.yRemoteSelectionHead-${clientID}::after {
+  position: absolute;
+  content: '${escapedLabel}';
+  top: -1.4em;
+  left: -2px;
+  font-size: 10px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-weight: 600;
+  padding: 1px 4px;
+  background-color: ${color};
+  color: #ffffff;
+  border-radius: 2px;
+  white-space: nowrap;
+  pointer-events: none;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.6);
+  z-index: 50;
+  line-height: 1.2;
+}
+`;
+  });
+
+  styleEl.textContent = css;
+}
+
+/**
  * MonacoBinding
  *
  * Synchronizes a Monaco Editor text model with a Yjs Y.Text instance.
@@ -78,6 +141,7 @@ export class MonacoBinding {
   public readonly editor: MonacoType.editor.IStandaloneCodeEditor;
   public readonly awareness: Awareness | null;
   public readonly monaco: typeof MonacoType;
+  public activeFileName: string;
 
   private readonly mux = createMutex();
   private _savedSelection: RelativeSelection | null = null;
@@ -94,7 +158,8 @@ export class MonacoBinding {
     monacoModel: MonacoType.editor.ITextModel,
     editor: MonacoType.editor.IStandaloneCodeEditor,
     awareness: Awareness | null = null,
-    monaco: typeof MonacoType
+    monaco: typeof MonacoType,
+    activeFileName: string = "index.js"
   ) {
     this.ytext = ytext;
     this.doc = ytext.doc!;
@@ -102,6 +167,7 @@ export class MonacoBinding {
     this.editor = editor;
     this.awareness = awareness;
     this.monaco = monaco;
+    this.activeFileName = activeFileName;
 
     // Save relative selection before transactions to maintain cursor location through remote changes
     this._beforeTransaction = () => {
@@ -122,6 +188,8 @@ export class MonacoBinding {
         return;
       }
 
+      updateCursorStyles(this.awareness);
+
       const newDecorations: MonacoType.editor.IModelDeltaDecoration[] = [];
       this.awareness.getStates().forEach((state, clientID) => {
         if (
@@ -130,6 +198,11 @@ export class MonacoBinding {
           state.selection.anchor &&
           state.selection.head
         ) {
+          // If collaborator is on a different file, don't show cursor on this file
+          if (state.user?.activeFile && state.user.activeFile !== this.activeFileName) {
+            return;
+          }
+
           const anchorAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.anchor, this.doc);
           const headAbs = Y.createAbsolutePositionFromRelativePosition(state.selection.head, this.doc);
           if (anchorAbs !== null && headAbs !== null && anchorAbs.type === this.ytext && headAbs.type === this.ytext) {
@@ -137,12 +210,28 @@ export class MonacoBinding {
             const endIndex = Math.max(anchorAbs.index, headAbs.index);
             const start = this.monacoModel.getPositionAt(startIndex);
             const end = this.monacoModel.getPositionAt(endIndex);
+            const headPos = this.monacoModel.getPositionAt(headAbs.index);
 
+            // Selection range highlight (if text is selected)
+            if (startIndex !== endIndex) {
+              newDecorations.push({
+                range: new this.monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+                options: {
+                  className: `yRemoteSelection yRemoteSelection-${clientID}`,
+                },
+              });
+            }
+
+            // Remote cursor caret and name / typing badge
             newDecorations.push({
-              range: new this.monaco.Range(start.lineNumber, start.column, end.lineNumber, end.column),
+              range: new this.monaco.Range(headPos.lineNumber, headPos.column, headPos.lineNumber, headPos.column),
               options: {
-                className: `yRemoteSelection yRemoteSelection-${clientID}`,
-                hoverMessage: { value: state.user?.name || `Peer #${clientID}` },
+                className: `yRemoteSelectionHead yRemoteSelectionHead-${clientID}`,
+                hoverMessage: {
+                  value: state.user?.isTyping
+                    ? `${state.user.name} is typing...`
+                    : state.user?.name || `Peer #${clientID}`,
+                },
               },
             });
           }
