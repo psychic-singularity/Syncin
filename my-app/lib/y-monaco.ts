@@ -142,6 +142,7 @@ export class MonacoBinding {
   public readonly awareness: Awareness | null;
   public readonly monaco: typeof MonacoType;
   public activeFileName: string;
+  public localUserId: string;
 
   private readonly mux = createMutex();
   private _savedSelection: RelativeSelection | null = null;
@@ -159,7 +160,8 @@ export class MonacoBinding {
     editor: MonacoType.editor.IStandaloneCodeEditor,
     awareness: Awareness | null = null,
     monaco: typeof MonacoType,
-    activeFileName: string = "index.js"
+    activeFileName: string = "index.js",
+    localUserId: string = ""
   ) {
     this.ytext = ytext;
     this.doc = ytext.doc!;
@@ -168,6 +170,7 @@ export class MonacoBinding {
     this.awareness = awareness;
     this.monaco = monaco;
     this.activeFileName = activeFileName;
+    this.localUserId = localUserId;
 
     // Save relative selection before transactions to maintain cursor location through remote changes
     this._beforeTransaction = () => {
@@ -198,6 +201,11 @@ export class MonacoBinding {
           state.selection.anchor &&
           state.selection.head
         ) {
+          // If this state belongs to the same user (e.g. user has room open in multiple tabs), don't show ghost cursor
+          if (this.localUserId && state.user?.id && state.user.id === this.localUserId) {
+            return;
+          }
+
           // If collaborator is on a different file, don't show cursor on this file
           if (state.user?.activeFile && state.user.activeFile !== this.activeFileName) {
             return;
