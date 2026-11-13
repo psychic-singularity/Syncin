@@ -38,6 +38,7 @@ export default function RoomsPortalPage() {
       return false;
     }
     localStorage.setItem("collab_user_name", trimmed);
+    sessionStorage.setItem("collab_session_user_name", trimmed);
     setErrorMessage(null);
     return true;
   };

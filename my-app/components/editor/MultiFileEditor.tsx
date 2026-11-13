@@ -34,6 +34,25 @@ function getRandomColor(): string {
   return USER_COLORS[Math.floor(Math.random() * USER_COLORS.length)];
 }
 
+function getDistinctColor(usedColors: Set<string>): string {
+  const available = USER_COLORS.filter((c) => !usedColors.has(c));
+  if (available.length > 0) {
+    return available[Math.floor(Math.random() * available.length)];
+  }
+  return getRandomColor();
+}
+
+function disambiguateName(desiredName: string, existingNames: Set<string>): string {
+  if (!existingNames.has(desiredName)) {
+    return desiredName;
+  }
+  let counter = 2;
+  while (existingNames.has(`${desiredName} (${counter})`)) {
+    counter++;
+  }
+  return `${desiredName} (${counter})`;
+}
+
 export default function MultiFileEditor({
   roomName,
   wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000",
@@ -60,6 +79,23 @@ export default function MultiFileEditor({
   const [newFileNameInput, setNewFileNameInput] = useState("");
   const [fileError, setFileError] = useState<string | null>(null);
 
+  // Synchronized refs to avoid stale closures in awareness handlers
+  const userNameRef = useRef(userName);
+  const userColorRef = useRef(userColor);
+  const activeFileRef = useRef(activeFileId);
+
+  useEffect(() => {
+    userNameRef.current = userName;
+  }, [userName]);
+
+  useEffect(() => {
+    userColorRef.current = userColor;
+  }, [userColor]);
+
+  useEffect(() => {
+    activeFileRef.current = activeFileId;
+  }, [activeFileId]);
+
   // Collaborators awareness state
   const [collaborators, setCollaborators] = useState<Array<{
     clientId: number;
@@ -72,18 +108,20 @@ export default function MultiFileEditor({
   const [isCopied, setIsCopied] = useState(false);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // 1. Initialize user profile from localStorage or prompt
+  // 1. Initialize user profile from sessionStorage (isolated per tab) or prompt
   useEffect(() => {
-    const savedName = localStorage.getItem("collab_user_name");
-    const savedColor = localStorage.getItem("collab_user_color") || getRandomColor();
+    // sessionStorage is unique to each tab, preventing cross-tab identity collisions
+    const sessionName = sessionStorage.getItem("collab_session_user_name");
+    const sessionColor = sessionStorage.getItem("collab_session_user_color");
+    const lastGlobalName = localStorage.getItem("collab_user_name") || "";
 
-    if (savedName && savedName.trim().length > 0) {
-      setUserName(savedName.trim());
-      setUserColor(savedColor);
-      localStorage.setItem("collab_user_color", savedColor);
+    if (sessionName && sessionName.trim().length > 0) {
+      setUserName(sessionName.trim());
+      setUserColor(sessionColor || getRandomColor());
     } else {
-      setUserColor(savedColor);
-      localStorage.setItem("collab_user_color", savedColor);
+      // Direct link in a new tab: open name prompt so this tab has its own distinct identity!
+      setTempNameInput(lastGlobalName);
+      setUserColor(sessionColor || getRandomColor());
       setIsNamePromptOpen(true);
     }
   }, []);
@@ -94,14 +132,25 @@ export default function MultiFileEditor({
     const cleanName = tempNameInput.trim();
     if (cleanName.length === 0) return;
 
-    setUserName(cleanName);
+    // Disambiguate if any existing active peer in the room already uses this exact name
+    const existingPeerNames = new Set(collaborators.map((c) => c.name));
+    const finalName = disambiguateName(cleanName, existingPeerNames);
+
+    // Pick a distinct color not currently in use by active peers
+    const usedColors = new Set(collaborators.map((c) => c.color));
+    const finalColor = getDistinctColor(usedColors);
+
+    setUserName(finalName);
+    setUserColor(finalColor);
+    sessionStorage.setItem("collab_session_user_name", finalName);
+    sessionStorage.setItem("collab_session_user_color", finalColor);
     localStorage.setItem("collab_user_name", cleanName);
     setIsNamePromptOpen(false);
 
     if (provider?.awareness) {
       provider.awareness.setLocalStateField("user", {
-        name: cleanName,
-        color: userColor,
+        name: finalName,
+        color: finalColor,
         activeFile: activeFileId,
         isTyping: false,
       });
@@ -178,6 +227,9 @@ console.log("Total:", calculateTotal(shoppingCart));
           isTyping?: boolean;
         }> = [];
 
+        const currentName = userNameRef.current;
+        let conflictWithOlderPeer = false;
+
         wsProvider.awareness.getStates().forEach((state, cId) => {
           if (cId !== ydoc.clientID && state.user?.name) {
             peerList.push({
@@ -187,9 +239,35 @@ console.log("Total:", calculateTotal(shoppingCart));
               activeFile: state.user.activeFile,
               isTyping: Boolean(state.user.isTyping),
             });
+
+            // If another peer has the exact same name and joined earlier (lower clientId):
+            if (currentName && state.user.name === currentName && cId < ydoc.clientID) {
+              conflictWithOlderPeer = true;
+            }
           }
         });
+
         setCollaborators(peerList);
+
+        // Auto-disambiguate if another tab/user took this exact name first:
+        if (conflictWithOlderPeer && currentName) {
+          const allPeerNames = new Set(peerList.map((p) => p.name));
+          const resolvedName = disambiguateName(currentName, allPeerNames);
+          const usedColors = new Set(peerList.map((p) => p.color));
+          const resolvedColor = getDistinctColor(usedColors);
+
+          setUserName(resolvedName);
+          setUserColor(resolvedColor);
+          sessionStorage.setItem("collab_session_user_name", resolvedName);
+          sessionStorage.setItem("collab_session_user_color", resolvedColor);
+
+          wsProvider.awareness.setLocalStateField("user", {
+            name: resolvedName,
+            color: resolvedColor,
+            activeFile: activeFileRef.current,
+            isTyping: false,
+          });
+        }
       };
 
       wsProvider.awareness.on("change", updateAwareness);
