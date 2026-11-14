@@ -1,109 +1,122 @@
 import Link from "next/link";
 import { MultiplayerHeroPreview } from "@/components/landing/MultiplayerHeroPreview";
+import { ArchitectureDiagram } from "@/components/landing/ArchitectureDiagram";
+import { CrdtMergeDemo } from "@/components/landing/CrdtMergeDemo";
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300">
-      {/* 1. Liveblocks-Style Top Navigation */}
-      <header className="sticky top-0 z-50 border-b border-zinc-800/80 bg-zinc-950/80 backdrop-blur-md px-6 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 group">
-            <span className="font-mono text-emerald-400 font-bold text-base group-hover:text-emerald-300 transition-colors">
-              &lt;/&gt;
-            </span>
+    <div className="min-h-screen bg-[#09090b] text-[#f4f4f5] flex flex-col font-sans selection:bg-emerald-500/20 selection:text-emerald-300 relative overflow-x-hidden">
+      {/* Ambient Top Lighting Gradient (Linear/Raycast style) */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[550px] hero-glow pointer-events-none -z-10" />
+
+      {/* 1. Refined Navigation Bar */}
+      <header className="sticky top-0 z-50 border-b border-white/[0.07] bg-[#09090b]/80 backdrop-blur-xl px-6 py-3.5 flex items-center justify-between transition-colors">
+        <div className="flex items-center gap-8">
+          {/* Brand Mark */}
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="h-7 w-7 rounded-lg bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 group-hover:border-emerald-500/40 group-hover:bg-emerald-500/15 transition-all shadow-sm">
+              <span className="font-mono text-xs font-bold">&lt;/&gt;</span>
+            </div>
             <span className="font-semibold text-sm tracking-tight text-white font-sans">
               CodeRoom
             </span>
-            <span className="hidden sm:inline-flex rounded border border-zinc-800 bg-zinc-900 px-1.5 py-0.5 font-mono text-[10px] text-zinc-400">
+            <span className="hidden sm:inline-flex rounded-md border border-white/[0.08] bg-white/[0.03] px-2 py-0.5 font-mono text-[10px] text-zinc-400">
               Yjs + Monaco
             </span>
           </Link>
 
-          {/* Quick Anchor Links */}
-          <nav className="hidden md:flex items-center gap-5 text-xs text-zinc-400 font-medium">
-            <a href="#features" className="hover:text-zinc-200 transition-colors">
+          {/* Navigation Links */}
+          <nav className="hidden md:flex items-center gap-6 text-xs text-zinc-400 font-medium">
+            <a href="#features" className="hover:text-white transition-colors">
               Features
             </a>
-            <a href="#multiplayer" className="hover:text-zinc-200 transition-colors">
-              Multiplayer Preview
+            <a href="#interactive-preview" className="hover:text-white transition-colors">
+              Interactive Preview
             </a>
-            <a href="#architecture" className="hover:text-zinc-200 transition-colors">
+            <a href="#architecture" className="hover:text-white transition-colors">
               Architecture
             </a>
-            <a href="#schedule" className="hover:text-zinc-200 transition-colors">
+            <a href="#comparison" className="hover:text-white transition-colors">
+              Comparison
+            </a>
+            <a href="#schedule" className="hover:text-white transition-colors">
               Daily Reset (IST)
             </a>
           </nav>
         </div>
 
-        {/* Top-Right "Use the website" Button (Explicit User Requirement) */}
+        {/* Top-Right CTA (Explicit User Requirement) */}
         <div className="flex items-center gap-3">
           <Link
             href="/rooms"
-            className="inline-flex items-center justify-center rounded bg-emerald-600 px-4 py-1.5 text-xs font-medium text-white hover:bg-emerald-500 active:bg-emerald-700 transition-all shadow-sm"
+            className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-4 py-1.5 text-xs font-semibold text-zinc-950 hover:bg-emerald-400 active:bg-emerald-600 transition-all shadow-[0_0_20px_rgba(16,185,129,0.2)]"
           >
             Use the website &rarr;
           </Link>
         </div>
       </header>
 
-      {/* 2. Hero Section */}
+      {/* 2. Main Content Container */}
       <main className="flex-1 flex flex-col">
+        {/* Hero Section */}
         <section className="relative px-6 pt-16 pb-12 max-w-6xl w-full mx-auto flex flex-col items-center text-center">
-          {/* Status Pill */}
-          <div className="inline-flex items-center gap-2 rounded-full border border-zinc-800 bg-zinc-900/90 px-3.5 py-1 text-xs font-mono text-zinc-400 mb-8 shadow-sm">
+          {/* Status Badge */}
+          <div className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1 text-xs font-mono text-zinc-400 mb-6 shadow-sm hover:border-white/[0.14] transition-colors">
             <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-            <span className="text-zinc-300">Live Collaborative CRDT Engine</span>
+            <span className="text-zinc-200">Ephemeral Collaborative Workspaces</span>
             <span className="text-zinc-600">&bull;</span>
-            <span className="text-zinc-500">Auto-Purge 00:00 IST</span>
+            <span className="text-zinc-400">Auto-Purge 00:00 IST</span>
           </div>
 
-          {/* Hero Typography */}
+          {/* Hero Headline */}
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-semibold tracking-tight text-white max-w-3xl leading-[1.12]">
-            Real-time collaborative code editing.
+            The real-time code editor engineered for teams.
           </h1>
+
+          {/* Value Proposition */}
           <p className="mt-5 text-sm sm:text-base text-zinc-400 max-w-2xl leading-relaxed">
-            Create or join ephemeral JavaScript workspaces powered by Yjs CRDTs and Monaco. Track live peer cursors, broadcast typing badges, and manage multiple files with zero logins, zero accounts, and automated daily midnight resets.
+            Spin up instant multi-file JavaScript rooms powered by Yjs CRDTs and Monaco. Track live peer cursors, see typing status in real time, and collaborate with zero logins, zero accounts, and automated daily midnight resets.
           </p>
 
-          {/* Hero Action Buttons */}
-          <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
+          {/* Dual Call-to-Actions */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Link
               href="/rooms"
-              className="inline-flex items-center justify-center rounded bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700 transition-all shadow-sm"
+              className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-emerald-400 active:bg-emerald-600 transition-all shadow-[0_0_25px_rgba(16,185,129,0.25)]"
             >
               Use the website &rarr;
             </Link>
             <a
-              href="#multiplayer"
-              className="inline-flex items-center justify-center rounded border border-zinc-800 bg-zinc-900/80 px-4 py-2.5 text-sm font-medium text-zinc-300 hover:bg-zinc-800 hover:text-white transition-colors"
+              href="#interactive-preview"
+              className="inline-flex items-center justify-center rounded-lg border border-white/[0.09] bg-white/[0.04] px-4 py-2.5 text-sm font-medium text-zinc-200 hover:bg-white/[0.08] hover:text-white transition-colors"
             >
-              Multiplayer Demo &darr;
+              Explore Interactive Demo &darr;
             </a>
           </div>
 
-          {/* Technical Specs Ticker */}
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-mono text-zinc-500">
-            <span>&bull; Sub-10ms CRDT Sync</span>
-            <span>&bull; In-Tree Monaco Binding</span>
-            <span>&bull; Horizontal Redis Pub/Sub</span>
-            <span>&bull; Neon PostgreSQL Persistence</span>
+          {/* Technical Trust Indicators */}
+          <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs font-mono text-zinc-400">
+            <span>&bull; Sub-10ms Keystroke Latency</span>
+            <span>&bull; Deterministic CRDT Convergence</span>
+            <span>&bull; Zero-Auth Ephemeral Rooms</span>
+            <span>&bull; Neon DB + Redis Backplane</span>
           </div>
 
-          {/* Interactive Live Hero Canvas (Signature Liveblocks Showcase) */}
-          <div id="multiplayer" className="mt-14 w-full scroll-mt-24">
+          {/* Interactive Hero Product Preview (Centerpiece) */}
+          <div id="interactive-preview" className="mt-12 w-full scroll-mt-24">
             <MultiplayerHeroPreview />
           </div>
         </section>
 
-        {/* 3. Liveblocks-Style Bento Grid (Features & Technical Capabilities) */}
-        <section id="features" className="border-t border-zinc-800/80 bg-zinc-900/20 px-6 py-20 scroll-mt-20">
+        {/* 3. Features Section (Asymmetrical Bento Grid) */}
+        <section id="features" className="border-t border-white/[0.07] bg-[#0c0c11]/60 px-6 py-20 scroll-mt-20 relative">
           <div className="max-w-6xl w-full mx-auto">
-            <div className="text-center max-w-2xl mx-auto mb-14">
+            {/* Section Header */}
+            <div className="text-center max-w-2xl mx-auto mb-16">
               <span className="font-mono text-xs uppercase tracking-wider text-emerald-400 font-semibold">
                 Multiplayer Primitives
               </span>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white font-sans">
                 Engineered for instantaneous collaboration.
               </h2>
               <p className="mt-3 text-xs sm:text-sm text-zinc-400 leading-relaxed">
@@ -111,91 +124,81 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Bento Grid Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Asymmetrical Bento Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
               {/* Card 1: Conflict-Free CRDTs (Span 2 cols on medium+) */}
-              <div className="md:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 flex flex-col justify-between hover:border-zinc-700 transition-colors">
+              <div className="md:col-span-2 rounded-2xl border border-white/[0.08] bg-[#0e0e14] p-6 lg:p-7 flex flex-col justify-between hover:border-white/[0.14] transition-colors relative overflow-hidden shadow-lg">
                 <div>
                   <div className="flex items-center justify-between text-xs font-mono text-emerald-400 font-semibold">
                     <span>01 // CONFLICT-FREE REPLICATION</span>
-                    <span className="text-zinc-500">lib0 binary sync</span>
+                    <span className="text-zinc-500 font-normal">lib0 binary sync</span>
                   </div>
-                  <h3 className="mt-3 text-base sm:text-lg font-semibold text-white">
+                  <h3 className="mt-3 text-lg font-semibold text-white font-sans">
                     Deterministic Keystroke Convergence
                   </h3>
                   <p className="mt-2 text-xs text-zinc-400 leading-relaxed max-w-xl">
-                    Powered by Yjs mathematical CRDTs. Keystrokes execute locally with 0ms optimistic latency, while differential state vectors synchronize deterministically across peers. No merge conflicts, no lockups, and no lost work.
+                    Powered by Yjs mathematical CRDTs. Keystrokes execute locally with 0ms optimistic latency, while differential state vectors synchronize deterministically across peers. No merge conflicts, no centralized lockups, and no lost work.
                   </p>
                 </div>
 
-                {/* Visual CRDT Demonstration Box */}
-                <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950 p-4 font-mono text-xs text-zinc-300 select-none">
-                  <div className="flex items-center justify-between border-b border-zinc-800/80 pb-2 mb-3 text-[11px] text-zinc-500">
-                    <span>CONCURRENT EDIT MERGE</span>
-                    <span className="text-emerald-400">STATE: CONVERGED</span>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 text-[12px]">
-                    <div className="border-r border-zinc-800/80 pr-3">
-                      <span className="text-emerald-400 font-medium">Peer A (Priya):</span>
-                      <p className="text-zinc-400 mt-1 font-mono">insert(&apos;export const app = &apos;)</p>
-                      <span className="inline-block mt-2 text-[10px] text-zinc-500">Vector clock: [0, 4]</span>
-                    </div>
-                    <div>
-                      <span className="text-amber-400 font-medium">Peer B (Alex):</span>
-                      <p className="text-zinc-400 mt-1 font-mono">insert(&apos;createApp();&apos;)</p>
-                      <span className="inline-block mt-2 text-[10px] text-zinc-500">Vector clock: [1, 2]</span>
-                    </div>
-                  </div>
-                  <div className="mt-3 pt-2 border-t border-zinc-800/80 text-[11px] text-zinc-400 flex items-center justify-between">
-                    <span>Result: <code className="text-white font-mono bg-zinc-900 px-1 py-0.5 rounded">&apos;export const app = createApp();&apos;</code></span>
-                    <span className="text-emerald-400 text-[10px]">Deterministic across all clients</span>
-                  </div>
+                {/* Interactive CRDT Convergence Demonstration */}
+                <div className="mt-6">
+                  <CrdtMergeDemo />
                 </div>
               </div>
 
-              {/* Card 2: Live Typing & Cursor Presence */}
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 flex flex-col justify-between hover:border-zinc-700 transition-colors">
+              {/* Card 2: Live Typing & Cursor Presence (1 col) */}
+              <div className="rounded-2xl border border-white/[0.08] bg-[#0e0e14] p-6 lg:p-7 flex flex-col justify-between hover:border-white/[0.14] transition-colors shadow-lg">
                 <div>
                   <div className="flex items-center justify-between text-xs font-mono text-emerald-400 font-semibold">
                     <span>02 // PRESENCE ENGINE</span>
-                    <span className="text-zinc-500">Y.Awareness</span>
+                    <span className="text-zinc-500 font-normal">Y.Awareness</span>
                   </div>
-                  <h3 className="mt-3 text-base sm:text-lg font-semibold text-white">
+                  <h3 className="mt-3 text-lg font-semibold text-white font-sans">
                     Live Typing Cursors
                   </h3>
                   <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
-                    Collaborators see exact cursor positions, line numbers, and custom display names. When typing, dynamic badges display <code className="text-emerald-400">[Name is typing... ✎]</code> directly at the cursor head.
+                    Collaborators see exact cursor positions, line numbers, and custom display names. When typing, dynamic badges display <code className="text-emerald-400 bg-emerald-500/10 px-1 py-0.5 rounded font-mono text-[11px]">[Name is typing... ✎]</code> directly at the cursor head.
                   </p>
                 </div>
 
-                {/* Visual Cursor Preview */}
-                <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950 p-4 font-mono select-none">
-                  <div className="text-[11px] text-zinc-500 mb-2">AWARENESS BROADCAST</div>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                      <span className="text-xs text-zinc-200">Priya K.</span>
-                      <span className="rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 text-[10px]">
+                {/* Visual Cursor Simulation */}
+                <div className="mt-6 rounded-xl border border-white/[0.06] bg-[#08080c] p-4 font-mono select-none">
+                  <div className="text-[10px] text-zinc-500 mb-3 uppercase tracking-wider">
+                    Awareness Telemetry
+                  </div>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-2 rounded bg-white/[0.03] border border-white/[0.05]">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        <span className="text-xs text-white font-sans font-medium">Priya K.</span>
+                      </div>
+                      <span className="rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 text-[10px] font-mono">
                         typing... ✎
                       </span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <div className="h-2 w-2 rounded-full bg-amber-500" />
-                      <span className="text-xs text-zinc-200">Alex M.</span>
-                      <span className="text-zinc-500 text-[10px]">active in calculator.js</span>
+
+                    <div className="flex items-center justify-between p-2 rounded bg-white/[0.03] border border-white/[0.05]">
+                      <div className="flex items-center gap-2">
+                        <span className="h-2 w-2 rounded-full bg-amber-400" />
+                        <span className="text-xs text-white font-sans font-medium">Alex M.</span>
+                      </div>
+                      <span className="text-zinc-400 text-[10px] font-mono">
+                        Line 4, Col 12
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
 
-              {/* Card 3: Multi-File JS Playgrounds */}
-              <div className="rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 flex flex-col justify-between hover:border-zinc-700 transition-colors">
+              {/* Card 3: Multi-File JS Playgrounds (1 col) */}
+              <div className="rounded-2xl border border-white/[0.08] bg-[#0e0e14] p-6 lg:p-7 flex flex-col justify-between hover:border-white/[0.14] transition-colors shadow-lg">
                 <div>
                   <div className="flex items-center justify-between text-xs font-mono text-emerald-400 font-semibold">
                     <span>03 // WORKSPACES</span>
-                    <span className="text-zinc-500">Shared Map</span>
+                    <span className="text-zinc-500 font-normal">Shared Y.Map</span>
                   </div>
-                  <h3 className="mt-3 text-base sm:text-lg font-semibold text-white">
+                  <h3 className="mt-3 text-lg font-semibold text-white font-sans">
                     Multi-File Projects
                   </h3>
                   <p className="mt-2 text-xs text-zinc-400 leading-relaxed">
@@ -203,36 +206,42 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950 p-3 font-mono text-xs text-zinc-300 space-y-1.5 select-none">
-                  <div className="flex items-center justify-between text-zinc-400 text-[11px]">
-                    <span className="flex items-center gap-1.5 text-white">
-                      <span className="text-amber-400 font-bold">JS</span> index.js
-                    </span>
-                    <span className="text-[10px] text-emerald-400">2 peers</span>
+                {/* Visual File Tree */}
+                <div className="mt-6 rounded-xl border border-white/[0.06] bg-[#08080c] p-3.5 font-mono text-xs text-zinc-300 space-y-2 select-none">
+                  <div className="flex items-center justify-between p-2 rounded bg-white/[0.04] border border-white/[0.06]">
+                    <div className="flex items-center gap-2 text-white">
+                      <span className="text-amber-400 font-bold text-[11px]">JS</span>
+                      <span>index.js</span>
+                    </div>
+                    <span className="text-[10px] text-emerald-400 font-sans">2 active peers</span>
                   </div>
-                  <div className="flex items-center justify-between text-zinc-400 text-[11px]">
-                    <span className="flex items-center gap-1.5 text-zinc-400">
-                      <span className="text-amber-400 font-bold">JS</span> calculator.js
-                    </span>
-                    <span className="text-[10px] text-amber-400">1 peer</span>
+
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-white/[0.02]">
+                    <div className="flex items-center gap-2 text-zinc-400">
+                      <span className="text-amber-400 font-bold text-[11px]">JS</span>
+                      <span>calculator.js</span>
+                    </div>
+                    <span className="text-[10px] text-amber-400 font-sans">1 peer</span>
                   </div>
-                  <div className="flex items-center justify-between text-zinc-400 text-[11px]">
-                    <span className="flex items-center gap-1.5 text-zinc-400">
-                      <span className="text-amber-400 font-bold">JS</span> config.js
-                    </span>
-                    <span className="text-[10px] text-zinc-600">idle</span>
+
+                  <div className="flex items-center justify-between p-2 rounded hover:bg-white/[0.02]">
+                    <div className="flex items-center gap-2 text-zinc-500">
+                      <span className="text-amber-400 font-bold text-[11px]">JS</span>
+                      <span>config.js</span>
+                    </div>
+                    <span className="text-[10px] text-zinc-600 font-sans">idle</span>
                   </div>
                 </div>
               </div>
 
               {/* Card 4: Daily Midnight Reset (Span 2 cols on medium+) */}
-              <div id="schedule" className="md:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900/40 p-6 flex flex-col justify-between hover:border-zinc-700 transition-colors scroll-mt-24">
+              <div id="schedule" className="md:col-span-2 rounded-2xl border border-white/[0.08] bg-[#0e0e14] p-6 lg:p-7 flex flex-col justify-between hover:border-white/[0.14] transition-colors scroll-mt-24 shadow-lg">
                 <div>
                   <div className="flex items-center justify-between text-xs font-mono text-emerald-400 font-semibold">
                     <span>04 // EPHEMERAL PURGE</span>
-                    <span className="text-zinc-500">00:00 Asia/Kolkata</span>
+                    <span className="text-zinc-500 font-normal">00:00 Asia/Kolkata</span>
                   </div>
-                  <h3 className="mt-3 text-base sm:text-lg font-semibold text-white">
+                  <h3 className="mt-3 text-lg font-semibold text-white font-sans">
                     Automated Daily Reset at Midnight IST
                   </h3>
                   <p className="mt-2 text-xs text-zinc-400 leading-relaxed max-w-xl">
@@ -240,17 +249,17 @@ export default function HomePage() {
                   </p>
                 </div>
 
-                {/* Visual Reset Schedule Banner */}
-                <div className="mt-6 rounded-lg border border-zinc-800 bg-zinc-950 p-4 font-mono text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
+                {/* Reset Schedule Banner */}
+                <div className="mt-6 rounded-xl border border-white/[0.06] bg-[#08080c] p-4 font-mono text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none">
                   <div>
-                    <div className="text-[11px] text-zinc-500">CRON PATTERN</div>
+                    <div className="text-[10px] text-zinc-500 uppercase tracking-wider">Cron Schedule</div>
                     <div className="text-sm font-semibold text-white mt-0.5">0 0 * * * (Asia/Kolkata)</div>
                     <div className="text-[10px] text-zinc-500 mt-1">Atomic transaction purge via Prisma &amp; Neon DB</div>
                   </div>
 
-                  <div className="flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/10 rounded px-3 py-1.5 text-emerald-400 text-xs">
+                  <div className="flex items-center gap-2 border border-emerald-500/30 bg-emerald-500/10 rounded-lg px-3 py-1.5 text-emerald-400 text-xs self-start sm:self-auto font-sans font-medium">
                     <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-                    <span>Purge Worker Active</span>
+                    <span>Scheduled Worker Active</span>
                   </div>
                 </div>
               </div>
@@ -258,14 +267,14 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 4. Architecture Deep Dive (Liveblocks-Style Specification) */}
-        <section id="architecture" className="border-t border-zinc-800/80 px-6 py-20 scroll-mt-20">
+        {/* 4. Architecture Section */}
+        <section id="architecture" className="border-t border-white/[0.07] px-6 py-20 scroll-mt-20">
           <div className="max-w-6xl w-full mx-auto">
             <div className="max-w-2xl mb-12">
               <span className="font-mono text-xs uppercase tracking-wider text-emerald-400 font-semibold">
-                Under the Hood
+                System Topology
               </span>
-              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white font-sans">
                 Enterprise real-time infrastructure.
               </h2>
               <p className="mt-3 text-xs sm:text-sm text-zinc-400 leading-relaxed">
@@ -273,74 +282,69 @@ export default function HomePage() {
               </p>
             </div>
 
-            {/* Architecture Flow Diagram */}
-            <div className="rounded-xl border border-zinc-800 bg-zinc-900/30 p-6 mb-12 font-mono text-xs">
-              <div className="text-zinc-500 text-[11px] mb-4 uppercase tracking-wider">
-                Multiplayer Data Flow
-              </div>
+            {/* Architecture Diagram Component */}
+            <ArchitectureDiagram />
+          </div>
+        </section>
 
-              <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 text-center">
-                <div className="border border-zinc-800 bg-zinc-950 p-3 rounded">
-                  <div className="text-emerald-400 font-semibold">Monaco Client</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">Y.Doc + MonacoBinding</div>
-                  <div className="text-[9px] text-zinc-600 mt-1">0ms local keystroke</div>
-                </div>
-
-                <div className="border border-zinc-800 bg-zinc-950 p-3 rounded">
-                  <div className="text-emerald-400 font-semibold">WebSocket Nodes</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">Standalone Port 4000</div>
-                  <div className="text-[9px] text-zinc-600 mt-1">Binary lib0 encoding</div>
-                </div>
-
-                <div className="border border-zinc-800 bg-zinc-950 p-3 rounded">
-                  <div className="text-emerald-400 font-semibold">Redis Pub/Sub</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">Horizontal Cluster</div>
-                  <div className="text-[9px] text-zinc-600 mt-1">Loopback suppression</div>
-                </div>
-
-                <div className="border border-zinc-800 bg-zinc-950 p-3 rounded">
-                  <div className="text-emerald-400 font-semibold">Neon PostgreSQL</div>
-                  <div className="text-[10px] text-zinc-500 mt-1">Binary Bytea Snapshots</div>
-                  <div className="text-[9px] text-zinc-600 mt-1">BullMQ compaction</div>
-                </div>
-              </div>
+        {/* 5. Architectural Comparison Section */}
+        <section id="comparison" className="border-t border-white/[0.07] bg-[#0c0c11]/40 px-6 py-20 scroll-mt-20">
+          <div className="max-w-6xl w-full mx-auto">
+            <div className="max-w-2xl mb-12">
+              <span className="font-mono text-xs uppercase tracking-wider text-emerald-400 font-semibold">
+                Technical Benchmark
+              </span>
+              <h2 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight text-white font-sans">
+                How CodeRoom compares.
+              </h2>
+              <p className="mt-3 text-xs sm:text-sm text-zinc-400 leading-relaxed">
+                Architectural comparison between CRDTs, centralized operational transform, and traditional polling.
+              </p>
             </div>
 
-            {/* Architecture Comparison Table */}
-            <div className="overflow-x-auto rounded-xl border border-zinc-800 bg-zinc-950">
+            {/* Comparison Table */}
+            <div className="overflow-x-auto rounded-2xl border border-white/[0.08] bg-[#0c0c11] shadow-xl">
               <table className="w-full text-left font-mono text-xs">
-                <thead className="border-b border-zinc-800 bg-zinc-900/60 text-zinc-400 text-[11px]">
+                <thead className="border-b border-white/[0.08] bg-white/[0.02] text-zinc-400 text-[11px]">
                   <tr>
-                    <th className="p-3.5 pl-5 font-medium">DIMENSION</th>
-                    <th className="p-3.5 font-medium text-emerald-400">CODEROOM (YJS CRDT)</th>
-                    <th className="p-3.5 font-medium text-zinc-500">TRADITIONAL WS / REST</th>
-                    <th className="p-3.5 font-medium text-zinc-500 pr-5">OPERATIONAL TRANSFORM (OT)</th>
+                    <th className="p-4 pl-6 font-medium">DIMENSION</th>
+                    <th className="p-4 font-semibold text-emerald-400 bg-emerald-500/[0.04]">
+                      CODEROOM (YJS CRDT)
+                    </th>
+                    <th className="p-4 font-medium text-zinc-500">TRADITIONAL WS / REST</th>
+                    <th className="p-4 font-medium text-zinc-500 pr-6">OPERATIONAL TRANSFORM (OT)</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-800/60 text-zinc-300 text-[11px]">
+                <tbody className="divide-y divide-white/[0.06] text-zinc-300 text-[11px]">
                   <tr>
-                    <td className="p-3.5 pl-5 font-semibold text-white font-sans">Conflict Resolution</td>
-                    <td className="p-3.5 text-emerald-400">Deterministic mathematical merge</td>
-                    <td className="p-3.5 text-zinc-500">Last-write-wins (data loss)</td>
-                    <td className="p-3.5 text-zinc-400 pr-5">Complex centralized transform</td>
+                    <td className="p-4 pl-6 font-semibold text-white font-sans">Conflict Resolution</td>
+                    <td className="p-4 text-emerald-400 bg-emerald-500/[0.03]">Deterministic mathematical merge</td>
+                    <td className="p-4 text-zinc-500">Last-write-wins (data loss)</td>
+                    <td className="p-4 text-zinc-400 pr-6">Complex centralized transform</td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 pl-5 font-semibold text-white font-sans">Local Keystroke Latency</td>
-                    <td className="p-3.5 text-emerald-400">&lt; 1ms (Optimistic execution)</td>
-                    <td className="p-3.5 text-zinc-500">Round-trip bound (50-200ms)</td>
-                    <td className="p-3.5 text-zinc-400 pr-5">Server ACK queue required</td>
+                    <td className="p-4 pl-6 font-semibold text-white font-sans">Local Keystroke Latency</td>
+                    <td className="p-4 text-emerald-400 bg-emerald-500/[0.03]">&lt; 1ms (Optimistic execution)</td>
+                    <td className="p-4 text-zinc-500">Round-trip bound (50-200ms)</td>
+                    <td className="p-4 text-zinc-400 pr-6">Server ACK queue required</td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 pl-5 font-semibold text-white font-sans">Offline Resiliency</td>
-                    <td className="p-3.5 text-emerald-400">Buffers updates, auto-converges</td>
-                    <td className="p-3.5 text-zinc-500">Connection drop = lost edits</td>
-                    <td className="p-3.5 text-zinc-400 pr-5">Buffer limits, merge friction</td>
+                    <td className="p-4 pl-6 font-semibold text-white font-sans">Offline Resiliency</td>
+                    <td className="p-4 text-emerald-400 bg-emerald-500/[0.03]">Buffers updates, auto-converges</td>
+                    <td className="p-4 text-zinc-500">Connection drop = lost edits</td>
+                    <td className="p-4 text-zinc-400 pr-6">Buffer limits, merge friction</td>
                   </tr>
                   <tr>
-                    <td className="p-3.5 pl-5 font-semibold text-white font-sans">Horizontal Scaling</td>
-                    <td className="p-3.5 text-emerald-400">Stateless nodes + Redis Pub/Sub</td>
-                    <td className="p-3.5 text-zinc-500">Sticky sessions / single node</td>
-                    <td className="p-3.5 text-zinc-400 pr-5">Single coordinator bottleneck</td>
+                    <td className="p-4 pl-6 font-semibold text-white font-sans">Network Protocol</td>
+                    <td className="p-4 text-emerald-400 bg-emerald-500/[0.03]">Binary lib0 differential deltas</td>
+                    <td className="p-4 text-zinc-500">Heavy JSON payloads</td>
+                    <td className="p-4 text-zinc-400 pr-6">Serialized operation frames</td>
+                  </tr>
+                  <tr>
+                    <td className="p-4 pl-6 font-semibold text-white font-sans">Horizontal Scaling</td>
+                    <td className="p-4 text-emerald-400 bg-emerald-500/[0.03]">Stateless nodes + Redis Pub/Sub</td>
+                    <td className="p-4 text-zinc-500">Sticky sessions / single node</td>
+                    <td className="p-4 text-zinc-400 pr-6">Single coordinator bottleneck</td>
                   </tr>
                 </tbody>
               </table>
@@ -348,29 +352,32 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* 5. Bottom "Use the website" CTA Section (Explicit User Requirement) */}
-        <section className="border-t border-zinc-800 bg-zinc-900/30 px-6 py-20">
-          <div className="max-w-4xl w-full mx-auto rounded-2xl border border-zinc-800 bg-zinc-950 p-8 sm:p-12 text-center flex flex-col items-center">
-            <span className="font-mono text-xs uppercase tracking-wider text-emerald-400 font-semibold">
+        {/* 6. Final Call-to-Action Section (Explicit User Requirement) */}
+        <section className="border-t border-white/[0.07] bg-[#0c0c11]/80 px-6 py-24 relative overflow-hidden">
+          <div className="max-w-4xl w-full mx-auto rounded-3xl border border-white/[0.1] bg-[#0e0e14] p-8 sm:p-14 text-center flex flex-col items-center relative overflow-hidden shadow-2xl">
+            {/* Ambient Glow */}
+            <div className="absolute inset-0 hero-glow-card pointer-events-none" />
+
+            <span className="font-mono text-xs uppercase tracking-wider text-emerald-400 font-semibold relative z-10">
               Instant Collaboration
             </span>
-            <h2 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-white">
-              Start collaborating now.
+            <h2 className="mt-3 text-3xl sm:text-4xl font-semibold tracking-tight text-white font-sans relative z-10">
+              Build together in real time.
             </h2>
-            <p className="mt-3 text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed">
+            <p className="mt-3 text-xs sm:text-sm text-zinc-400 max-w-lg leading-relaxed relative z-10">
               No account creation. No password hurdles. Pick your display name, create a room or join existing colleagues, and start coding in seconds.
             </p>
 
-            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4">
+            <div className="mt-8 flex flex-col sm:flex-row items-center gap-4 relative z-10">
               <Link
                 href="/rooms"
-                className="inline-flex items-center justify-center rounded bg-emerald-600 px-6 py-2.5 text-sm font-medium text-white hover:bg-emerald-500 active:bg-emerald-700 transition-all shadow-sm"
+                className="inline-flex items-center justify-center rounded-lg bg-emerald-500 px-6 py-2.5 text-sm font-semibold text-zinc-950 hover:bg-emerald-400 active:bg-emerald-600 transition-all shadow-[0_0_25px_rgba(16,185,129,0.3)]"
               >
                 Use the website &rarr;
               </Link>
             </div>
 
-            <div className="mt-6 flex items-center gap-4 text-[11px] font-mono text-zinc-500">
+            <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[11px] font-mono text-zinc-400 relative z-10">
               <span>&bull; Ephemeral JavaScript rooms</span>
               <span>&bull; Resets daily at 00:00 IST</span>
               <span>&bull; Zero auth friction</span>
@@ -379,26 +386,35 @@ export default function HomePage() {
         </section>
       </main>
 
-      {/* 6. Clean Footer */}
-      <footer className="border-t border-zinc-800/80 bg-zinc-950 px-6 py-8">
-        <div className="max-w-6xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs text-zinc-500">
-          <div className="flex items-center gap-2">
-            <span className="text-emerald-400 font-bold">&lt;/&gt;</span>
-            <span className="text-zinc-300 font-semibold font-sans">CodeRoom</span>
-            <span>&bull; Real-time multiplayer CRDT workspace</span>
+      {/* 7. Refined Footer */}
+      <footer className="border-t border-white/[0.07] bg-[#09090b] px-6 py-10">
+        <div className="max-w-6xl w-full mx-auto flex flex-col sm:flex-row items-center justify-between gap-6 font-mono text-xs text-zinc-400">
+          <div className="flex items-center gap-2.5">
+            <div className="h-5 w-5 rounded bg-emerald-500/10 border border-emerald-500/25 flex items-center justify-center text-emerald-400 text-[10px] font-bold">
+              &lt;/&gt;
+            </div>
+            <span className="text-white font-semibold font-sans">CodeRoom</span>
+            <span className="text-zinc-600">&bull;</span>
+            <span className="text-zinc-400">Enterprise CRDT Workspace</span>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <Link href="/rooms" className="hover:text-zinc-300 transition-colors">
+          <div className="flex flex-wrap items-center gap-6 text-[11px]">
+            <Link href="/rooms" className="hover:text-white transition-colors">
               Rooms Portal
             </Link>
-            <a href="#features" className="hover:text-zinc-300 transition-colors">
+            <a href="#features" className="hover:text-white transition-colors">
               Features
             </a>
-            <a href="#architecture" className="hover:text-zinc-300 transition-colors">
+            <a href="#architecture" className="hover:text-white transition-colors">
               Architecture
             </a>
-            <span className="text-emerald-400">&bull; Port 4000 Active</span>
+            <a href="#comparison" className="hover:text-white transition-colors">
+              Comparison
+            </a>
+            <span className="text-emerald-400 flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span>Port 4000 Active</span>
+            </span>
           </div>
         </div>
       </footer>
