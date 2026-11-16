@@ -1,0 +1,30 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+
+# Copy schema and generate Prisma client
+COPY prisma/ ./prisma/
+COPY worker/package*.json ./worker/
+
+WORKDIR /app/worker
+RUN npm ci
+
+COPY worker/ ./
+RUN npx prisma generate --schema=../prisma/schema.prisma
+RUN npm run build
+
+FROM node:20-alpine AS runner
+
+WORKDIR /app/worker
+
+ENV NODE_ENV=production
+
+COPY prisma/ ../prisma/
+COPY worker/package*.json ./
+RUN npm ci --only=production
+RUN npx prisma generate --schema=../prisma/schema.prisma
+
+COPY --from=builder /app/worker/dist ./dist
+
+CMD ["node", "dist/index.js"]
+

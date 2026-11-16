@@ -272,7 +272,38 @@ console.log("Total:", calculateTotal(shoppingCart));
     });
   }, [provider, userId, userName, userColor, activeFileId]);
 
-  // 4. Bind Monaco model to active file's Y.Text
+  // 4. Track typing state and broadcast to peers (LOCAL EDITS ONLY)
+  const handleLocalEdit = useCallback(() => {
+    if (!provider?.awareness || !userNameRef.current || !userIdRef.current) return;
+
+    // Set typing flag
+    provider.awareness.setLocalStateField("user", {
+      id: userIdRef.current,
+      name: userNameRef.current,
+      color: userColorRef.current,
+      activeFile: activeFileRef.current,
+      isTyping: true,
+    });
+
+    // Debounce to clear typing flag after 1.2s of inactivity
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      if (provider?.awareness) {
+        provider.awareness.setLocalStateField("user", {
+          id: userIdRef.current,
+          name: userNameRef.current,
+          color: userColorRef.current,
+          activeFile: activeFileRef.current,
+          isTyping: false,
+        });
+      }
+    }, 1200);
+  }, [provider]);
+
+  // 5. Bind Monaco model to active file's Y.Text
   const bindActiveFile = useCallback(() => {
     if (!editorInstance || !monacoInstance || !activeFileId) return;
 
@@ -289,7 +320,7 @@ console.log("Total:", calculateTotal(shoppingCart));
       // Ensure language is javascript
       monacoInstance.editor.setModelLanguage(currentModel, "javascript");
 
-      // Bind Monaco Model to Y.Text with localUserId for multi-tab cursor deduplication
+      // Bind Monaco Model to Y.Text with localUserId for multi-tab cursor deduplication and local typing detection
       const binding = new MonacoBinding(
         ytext,
         currentModel,
@@ -297,11 +328,18 @@ console.log("Total:", calculateTotal(shoppingCart));
         provider?.awareness || null,
         monacoInstance,
         activeFileId,
-        userId
+        userId,
+        handleLocalEdit
       );
       bindingRef.current = binding;
     }
-  }, [editorInstance, monacoInstance, activeFileId, ydoc, provider, userId]);
+  }, [editorInstance, monacoInstance, activeFileId, ydoc, provider, userId, handleLocalEdit]);
+
+  useEffect(() => {
+    if (bindingRef.current) {
+      bindingRef.current.onLocalEdit = handleLocalEdit;
+    }
+  }, [handleLocalEdit]);
 
   useEffect(() => {
     bindActiveFile();
@@ -312,37 +350,6 @@ console.log("Total:", calculateTotal(shoppingCart));
       }
     };
   }, [bindActiveFile]);
-
-  // 5. Track typing state and broadcast to peers
-  const handleEditorChange = () => {
-    if (!provider?.awareness || !userName || !userId) return;
-
-    // Set typing flag
-    provider.awareness.setLocalStateField("user", {
-      id: userId,
-      name: userName,
-      color: userColor,
-      activeFile: activeFileId,
-      isTyping: true,
-    });
-
-    // Debounce to clear typing flag after 1.2s of inactivity
-    if (typingTimeoutRef.current) {
-      clearTimeout(typingTimeoutRef.current);
-    }
-
-    typingTimeoutRef.current = setTimeout(() => {
-      if (provider?.awareness) {
-        provider.awareness.setLocalStateField("user", {
-          id: userId,
-          name: userName,
-          color: userColor,
-          activeFile: activeFileId,
-          isTyping: false,
-        });
-      }
-    }, 1200);
-  };
 
   // 6. File Operations
   const handleCreateFile = (e: React.FormEvent) => {
@@ -638,7 +645,6 @@ console.log("Total:", calculateTotal(shoppingCart));
                 setEditorInstance(editor);
                 setMonacoInstance(monaco);
               }}
-              onChange={handleEditorChange}
               options={{
                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                 fontSize: 13,

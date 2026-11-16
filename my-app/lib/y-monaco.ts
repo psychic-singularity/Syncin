@@ -6,9 +6,14 @@ import type { Awareness } from "y-protocols/awareness";
  * Lightweight re-entrant execution lock to avoid mutual feedback loops
  * between Monaco's onDidChangeContent and Yjs's ytext.observe.
  */
-function createMutex(): (fn: () => void) => void {
+export interface Mutex {
+  (fn: () => void): void;
+  isLocked: () => boolean;
+}
+
+function createMutex(): Mutex {
   let locked = false;
-  return (fn: () => void) => {
+  const mutex = (fn: () => void) => {
     if (locked) return;
     locked = true;
     try {
@@ -17,12 +22,15 @@ function createMutex(): (fn: () => void) => void {
       locked = false;
     }
   };
+  mutex.isLocked = () => locked;
+  return mutex;
 }
 
 class RelativeSelection {
   constructor(
     public readonly start: Y.RelativePosition,
-    public readonly end: Y.RelativePosition
+    public readonly end: Y.RelativePosition,
+    public readonly direction: number = 0
   ) {}
 }
 
@@ -35,9 +43,11 @@ function createRelativeSelection(
   if (!sel) return null;
   const startPos = sel.getStartPosition();
   const endPos = sel.getEndPosition();
-  const start = Y.createRelativePositionFromTypeIndex(type, model.getOffsetAt(startPos));
-  const end = Y.createRelativePositionFromTypeIndex(type, model.getOffsetAt(endPos));
-  return new RelativeSelection(start, end);
+  const isCaret = sel.isEmpty();
+  // Using assoc = -1 for carets ensures remote text insertion at the cursor does not push it forward
+  const start = Y.createRelativePositionFromTypeIndex(type, model.getOffsetAt(startPos), isCaret ? -1 : 0);
+  const end = Y.createRelativePositionFromTypeIndex(type, model.getOffsetAt(endPos), isCaret ? -1 : 0);
+  return new RelativeSelection(start, end, sel.getDirection());
 }
 
 function createMonacoSelectionFromRelativeSelection(
@@ -54,6 +64,15 @@ function createMonacoSelectionFromRelativeSelection(
     if (!model) return null;
     const startPos = model.getPositionAt(start.index);
     const endPos = model.getPositionAt(end.index);
+    if ((monaco.Selection as any).createWithDirection) {
+      return (monaco.Selection as any).createWithDirection(
+        startPos.lineNumber,
+        startPos.column,
+        endPos.lineNumber,
+        endPos.column,
+        relSel.direction
+      );
+    }
     return new monaco.Selection(
       startPos.lineNumber,
       startPos.column,
@@ -143,6 +162,7 @@ export class MonacoBinding {
   public readonly monaco: typeof MonacoType;
   public activeFileName: string;
   public localUserId: string;
+  public onLocalEdit?: () => void;
 
   private readonly mux = createMutex();
   private _savedSelection: RelativeSelection | null = null;
@@ -151,6 +171,7 @@ export class MonacoBinding {
   private _monacoChangeHandler: MonacoType.IDisposable;
   private _monacoDisposeHandler: MonacoType.IDisposable;
   private _cursorChangeHandler: MonacoType.IDisposable | null = null;
+  private _keyDownHandler: MonacoType.IDisposable | null = null;
   private _beforeTransaction: () => void;
   private _rerenderDecorations: () => void;
 
@@ -161,7 +182,8 @@ export class MonacoBinding {
     awareness: Awareness | null = null,
     monaco: typeof MonacoType,
     activeFileName: string = "index.js",
-    localUserId: string = ""
+    localUserId: string = "",
+    onLocalEdit?: () => void
   ) {
     this.ytext = ytext;
     this.doc = ytext.doc!;
@@ -171,12 +193,16 @@ export class MonacoBinding {
     this.monaco = monaco;
     this.activeFileName = activeFileName;
     this.localUserId = localUserId;
+    this.onLocalEdit = onLocalEdit;
 
     // Save relative selection before transactions to maintain cursor location through remote changes
     this._beforeTransaction = () => {
       this.mux(() => {
         if (this.editor.getModel() === this.monacoModel) {
-          this._savedSelection = createRelativeSelection(this.editor, this.monacoModel, this.ytext);
+          const rsel = createRelativeSelection(this.editor, this.monacoModel, this.ytext);
+          if (rsel !== null) {
+            this._savedSelection = rsel;
+          }
         }
       });
     };
@@ -262,13 +288,13 @@ export class MonacoBinding {
             const pos = this.monacoModel.getPositionAt(index);
             const range = new this.monaco.Range(pos.lineNumber, pos.column, pos.lineNumber, pos.column);
             const text = typeof op.insert === "string" ? op.insert : "";
-            edits.push({ range, text, forceMoveMarkers: true });
+            edits.push({ range, text });
             index += text.length;
           } else if (op.delete !== undefined) {
             const pos = this.monacoModel.getPositionAt(index);
             const endPos = this.monacoModel.getPositionAt(index + op.delete);
             const range = new this.monaco.Range(pos.lineNumber, pos.column, endPos.lineNumber, endPos.column);
-            edits.push({ range, text: "", forceMoveMarkers: true });
+            edits.push({ range, text: "" });
           }
         });
 
@@ -276,7 +302,7 @@ export class MonacoBinding {
           this.monacoModel.applyEdits(edits);
         }
 
-        // Restore cursor position
+        // Restore cursor position for local editor
         if (this._savedSelection) {
           const sel = createMonacoSelectionFromRelativeSelection(
             this.editor,
@@ -288,6 +314,7 @@ export class MonacoBinding {
           if (sel) {
             this.editor.setSelection(sel);
           }
+          this._savedSelection = null;
         }
       });
 
@@ -316,26 +343,51 @@ export class MonacoBinding {
             }
           });
         }, this);
+
+        // Notify local edit listener ONLY when user locally modifies content
+        if (this.onLocalEdit) {
+          this.onLocalEdit();
+        }
       });
     });
 
     // 3. Track cursor movements -> Broadcast via awareness
     if (this.awareness) {
-      this._cursorChangeHandler = this.editor.onDidChangeCursorSelection(() => {
+      this._cursorChangeHandler = this.editor.onDidChangeCursorSelection((e) => {
+        // Suppress cursor broadcasts while applying remote transactions or model updates
+        if (this.mux.isLocked()) {
+          return;
+        }
+        if (e && (e.source === "modelChange" || e.source === "api")) {
+          return;
+        }
         if (this.editor.getModel() === this.monacoModel) {
           const sel = this.editor.getSelection();
           if (sel) {
-            const anchorOffset = this.monacoModel.getOffsetAt(sel.getStartPosition());
-            const headOffset = this.monacoModel.getOffsetAt(sel.getEndPosition());
+            let anchorOffset = this.monacoModel.getOffsetAt(sel.getStartPosition());
+            let headOffset = this.monacoModel.getOffsetAt(sel.getEndPosition());
+            if (sel.getDirection() === this.monaco.SelectionDirection.RTL) {
+              const tmp = anchorOffset;
+              anchorOffset = headOffset;
+              headOffset = tmp;
+            }
+            const isCaret = sel.isEmpty();
             this.awareness?.setLocalStateField("selection", {
-              anchor: Y.createRelativePositionFromTypeIndex(this.ytext, anchorOffset),
-              head: Y.createRelativePositionFromTypeIndex(this.ytext, headOffset),
+              anchor: Y.createRelativePositionFromTypeIndex(this.ytext, anchorOffset, isCaret ? -1 : 0),
+              head: Y.createRelativePositionFromTypeIndex(this.ytext, headOffset, isCaret ? -1 : 0),
             });
           }
         }
       });
       this.awareness.on("change", this._rerenderDecorations);
     }
+
+    // 4. Capture key press events to activate typing state immediately
+    this._keyDownHandler = this.editor.onKeyDown(() => {
+      if (this.onLocalEdit) {
+        this.onLocalEdit();
+      }
+    });
 
     // Handle model disposal
     this._monacoDisposeHandler = this.monacoModel.onWillDispose(() => {
@@ -348,6 +400,9 @@ export class MonacoBinding {
     this._monacoDisposeHandler.dispose();
     if (this._cursorChangeHandler) {
       this._cursorChangeHandler.dispose();
+    }
+    if (this._keyDownHandler) {
+      this._keyDownHandler.dispose();
     }
     this.ytext.unobserve(this._ytextObserver);
     this.doc.off("beforeAllTransactions", this._beforeTransaction);
