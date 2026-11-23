@@ -34,8 +34,14 @@ export default function CodeEditor({
   initialLanguage = "typescript",
   defaultValue = "// Collaborative Editor Ready\n// Open this URL in another tab to test real-time synchronization!\nconsole.log('Real-time sync active');\n",
   documentId = "demo-document",
-  wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000",
+  wsUrl,
 }: CodeEditorProps) {
+  const resolvedWsUrl =
+    wsUrl ||
+    process.env.NEXT_PUBLIC_WS_URL ||
+    (typeof window !== "undefined"
+      ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:4000`
+      : "ws://localhost:4000");
   // 1. Stable CRDT document instance (survives React Strict Mode remounts)
   const [ydoc] = useState<Y.Doc>(() => new Y.Doc());
 
@@ -60,7 +66,7 @@ export default function CodeEditor({
   // Manage WebSocket Provider connection lifecycle
   useEffect(() => {
     try {
-      const wsProvider = new WebsocketProvider(wsUrl, documentId, ydoc);
+      const wsProvider = new WebsocketProvider(resolvedWsUrl, documentId, ydoc);
       setProvider(wsProvider);
 
       wsProvider.on("status", (event: { status: ConnectionStatus }) => {
@@ -95,7 +101,7 @@ export default function CodeEditor({
       console.error("[CodeEditor] WebSocket error:", err);
       setDiagnosticError(err?.message || String(err));
     }
-  }, [wsUrl, documentId, ydoc, defaultValue]);
+  }, [resolvedWsUrl, documentId, ydoc, defaultValue]);
 
   // Capture Monaco instances onMount
   const handleEditorDidMount: OnMount = (editor, monaco) => {
@@ -156,7 +162,7 @@ export default function CodeEditor({
       case "connected":
         return `Live Sync (Room: ${documentId} · ${connectedClients} online)`;
       case "connecting":
-        return `Connecting to WS (${wsUrl})...`;
+        return `Connecting to WS (${resolvedWsUrl})...`;
       case "disconnected":
         return "Disconnected (Offline Mode)";
     }

@@ -21,3 +21,6 @@ dist/
 .env.local
 .env.*.local
 
+.agents/
+.gitignore
+.env.example

@@ -84,6 +84,9 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile.web
+      args:
+        - NEXT_PUBLIC_WS_URL=${NEXT_PUBLIC_WS_URL:-}
+        - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-}
     container_name: collab-web
     restart: unless-stopped
     ports:

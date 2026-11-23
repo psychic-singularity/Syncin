@@ -36,8 +36,15 @@ function getRandomColor(): string {
 
 export default function MultiFileEditor({
   roomName,
-  wsUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:4000",
+  wsUrl,
 }: MultiFileEditorProps) {
+  const resolvedWsUrl =
+    wsUrl ||
+    process.env.NEXT_PUBLIC_WS_URL ||
+    (typeof window !== "undefined"
+      ? `${window.location.protocol === "https:" ? "wss:" : "ws:"}//${window.location.hostname}:4000`
+      : "ws://localhost:4000");
+
   // Stable Y.Doc CRDT store (survives React StrictMode double-invocations)
   const [ydoc] = useState<Y.Doc>(() => new Y.Doc());
 
@@ -154,7 +161,7 @@ export default function MultiFileEditor({
   // 2. Manage WebSocket Provider connection lifecycle
   useEffect(() => {
     try {
-      const wsProvider = new WebsocketProvider(wsUrl, roomName, ydoc);
+      const wsProvider = new WebsocketProvider(resolvedWsUrl, roomName, ydoc);
       setProvider(wsProvider);
 
       wsProvider.on("status", (event: { status: "connecting" | "connected" | "disconnected" }) => {
@@ -257,7 +264,7 @@ console.log("Total:", calculateTotal(shoppingCart));
     } catch (err) {
       console.error("[MultiFileEditor] WebSocket connection error:", err);
     }
-  }, [wsUrl, roomName, ydoc]);
+  }, [resolvedWsUrl, roomName, ydoc]);
 
   // 3. Update local user profile in awareness whenever identity or active file changes
   useEffect(() => {
